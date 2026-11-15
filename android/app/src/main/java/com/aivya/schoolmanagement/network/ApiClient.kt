@@ -11,12 +11,13 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 /**
- * Base URL for the Spring Boot backend.
- * - Android emulator: 10.0.2.2 reaches the host machine's localhost.
- * - A real device on the same Wi-Fi: replace with the host's LAN IP.
- * Override by changing this constant before building a release APK.
+ * Base URL for the Spring Boot backend, deployed on Render's free tier.
+ * The free instance spins down after inactivity -- the first request after
+ * a while can take up to ~50s to wake it back up, which NetworkResult's
+ * 10s connect/read timeout will surface as a clear "took too long" message
+ * rather than hanging silently.
  */
-const val API_BASE_URL = "http://10.0.2.2:8080/"
+const val API_BASE_URL = "https://aivya-school-management-application.onrender.com/"
 
 class AuthInterceptor(private val tokenStore: TokenStore) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -51,9 +52,11 @@ object ApiClient {
         val client = OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(tokenStore))
             .addInterceptor(logging)
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
+            // Generous timeout: the free Render instance can take ~50s to wake
+            // up from a cold start after sitting idle.
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
 
         val built = Retrofit.Builder()
