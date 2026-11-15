@@ -1,8 +1,10 @@
 package com.aivya.backend.service;
 
+import com.aivya.backend.entity.ClassSchedule;
 import com.aivya.backend.entity.SchoolClass;
 import com.aivya.backend.entity.Student;
 import com.aivya.backend.entity.Teacher;
+import com.aivya.backend.repository.ClassScheduleRepository;
 import com.aivya.backend.repository.SchoolClassRepository;
 import com.aivya.backend.repository.StudentRepository;
 import com.aivya.backend.repository.TeacherRepository;
@@ -13,26 +15,29 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * Seeds synthetic classes and students for the bootstrap teacher so the
- * mobile app has something to show on a clean install. No real student data
- * is ever used here -- names and roll numbers are entirely made up, and each
- * student gets a random QR check-in token (as if printed on an ID card).
- * Runs once: it skips a class that already has students.
+ * Seeds synthetic classes, students and a weekly timetable for the bootstrap
+ * teacher so the mobile app has something to show on a clean install. No
+ * real student data is ever used here -- names and roll numbers are entirely
+ * made up, and each student gets a random QR check-in token (as if printed
+ * on an ID card). Runs once: it skips a class that already has students.
  */
 @Configuration
 public class DemoDataSeeder {
 
-    private record ClassSeed(String grade, String section, String subject, String room, int studentCount) {}
+    private record ScheduleSeed(DayOfWeek day, LocalTime start, LocalTime end) {}
 
-    private static final List<ClassSeed> CLASS_SEEDS = List.of(
-            new ClassSeed("Grade 10", "Section A", "Advanced Mathematics", "Room 204", 18),
-            new ClassSeed("Grade 9", "Section B", "General Science", "Lab 2", 16),
-            new ClassSeed("Grade 8", "Section C", "English", "Room 105", 15)
-    );
+    private record ClassSeed(
+            String grade, String section, String subject, String room,
+            int studentCount, List<ScheduleSeed> schedules) {}
+
+    @Value("${BOOTSTRAP_TEACHER_EMAIL:teacher@aivya.edu}")
+    private String bootstrapEmail;
 
     private static final String[] FIRST_NAMES = {
             "Aarav", "Vivaan", "Aditi", "Diya", "Kabir", "Myra", "Rohan", "Isha",
@@ -40,15 +45,13 @@ public class DemoDataSeeder {
             "Dev", "Priya", "Yash", "Zara"
     };
 
-    @Value("${BOOTSTRAP_TEACHER_EMAIL:teacher@aivya.edu}")
-    private String bootstrapEmail;
-
     @Bean
     @Order(2)
     CommandLineRunner seedDemoClasses(
             TeacherRepository teacherRepository,
             SchoolClassRepository schoolClassRepository,
-            StudentRepository studentRepository) {
+            StudentRepository studentRepository,
+            ClassScheduleRepository classScheduleRepository) {
 
         return args -> {
             if (bootstrapEmail == null || bootstrapEmail.isBlank()) {
@@ -68,9 +71,33 @@ public class DemoDataSeeder {
                 return;
             }
 
+            DayOfWeek today = DayOfWeek.from(java.time.LocalDate.now());
+            LocalTime now = LocalTime.now();
+
+            // One class is "ongoing" right now, one is "upcoming" later today,
+            // one is "missed" (already over, today, unmarked) -- so the demo
+            // shows all three time-based states without the teacher waiting.
+            List<ClassSeed> classSeeds = List.of(
+                    new ClassSeed("Grade 10", "Section A", "Advanced Mathematics", "Room 204", 18, List.of(
+                            new ScheduleSeed(today, now.minusMinutes(10), now.plusMinutes(50)),
+                            new ScheduleSeed(nextDay(today, 2), LocalTime.of(9, 0), LocalTime.of(10, 0)),
+                            new ScheduleSeed(nextDay(today, 4), LocalTime.of(9, 0), LocalTime.of(10, 0))
+                    )),
+                    new ClassSeed("Grade 9", "Section B", "General Science", "Lab 2", 16, List.of(
+                            new ScheduleSeed(today, now.plusHours(2), now.plusHours(3)),
+                            new ScheduleSeed(nextDay(today, 1), LocalTime.of(11, 0), LocalTime.of(12, 0)),
+                            new ScheduleSeed(nextDay(today, 3), LocalTime.of(11, 0), LocalTime.of(12, 0))
+                    )),
+                    new ClassSeed("Grade 8", "Section C", "English", "Room 105", 15, List.of(
+                            new ScheduleSeed(today, now.minusHours(3), now.minusHours(2)),
+                            new ScheduleSeed(nextDay(today, 2), LocalTime.of(13, 30), LocalTime.of(14, 30)),
+                            new ScheduleSeed(nextDay(today, 5), LocalTime.of(13, 30), LocalTime.of(14, 30))
+                    ))
+            );
+
             int nameIndex = 0;
 
-            for (ClassSeed seed : CLASS_SEEDS) {
+            for (ClassSeed seed : classSeeds) {
                 SchoolClass schoolClass = new SchoolClass();
                 schoolClass.setGrade(seed.grade());
                 schoolClass.setSection(seed.section());
@@ -78,6 +105,15 @@ public class DemoDataSeeder {
                 schoolClass.setRoom(seed.room());
                 schoolClass.setTeacher(teacher);
                 schoolClass = schoolClassRepository.save(schoolClass);
+
+                for (ScheduleSeed slot : seed.schedules()) {
+                    ClassSchedule schedule = new ClassSchedule();
+                    schedule.setSchoolClass(schoolClass);
+                    schedule.setDayOfWeek(slot.day());
+                    schedule.setStartTime(slot.start());
+                    schedule.setEndTime(slot.end());
+                    classScheduleRepository.save(schedule);
+                }
 
                 for (int i = 1; i <= seed.studentCount(); i++) {
                     Student student = new Student();
@@ -91,8 +127,12 @@ public class DemoDataSeeder {
                 }
             }
 
-            System.out.println("Demo classes and students seeded successfully.");
+            System.out.println("Demo classes, schedules and students seeded successfully.");
         };
+    }
+
+    private DayOfWeek nextDay(DayOfWeek from, int offset) {
+        return DayOfWeek.of(((from.getValue() - 1 + offset) % 7) + 1);
     }
 
     private String rollSuffix(int rollNumber) {

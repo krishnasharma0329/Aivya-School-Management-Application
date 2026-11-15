@@ -22,6 +22,13 @@ data class ClassDto(
     val subject: String,
     val room: String?,
     val studentCount: Long,
+    val schedules: List<ScheduleSlotDto> = emptyList(),
+)
+
+data class ScheduleSlotDto(
+    val dayOfWeek: String,
+    val startTime: String,
+    val endTime: String,
 )
 
 data class StudentAttendanceDto(

@@ -1,7 +1,9 @@
 package com.aivya.backend.service;
 
 import com.aivya.backend.dto.classes.ClassResponse;
+import com.aivya.backend.dto.classes.ScheduleSlotResponse;
 import com.aivya.backend.entity.Teacher;
+import com.aivya.backend.repository.ClassScheduleRepository;
 import com.aivya.backend.repository.SchoolClassRepository;
 import com.aivya.backend.repository.StudentRepository;
 import com.aivya.backend.repository.TeacherRepository;
@@ -19,15 +21,18 @@ public class ClassService {
     private final SchoolClassRepository schoolClassRepository;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
+    private final ClassScheduleRepository classScheduleRepository;
 
     public ClassService(
             SchoolClassRepository schoolClassRepository,
             StudentRepository studentRepository,
-            TeacherRepository teacherRepository) {
+            TeacherRepository teacherRepository,
+            ClassScheduleRepository classScheduleRepository) {
 
         this.schoolClassRepository = schoolClassRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
+        this.classScheduleRepository = classScheduleRepository;
     }
 
     @Transactional(readOnly = true)
@@ -51,7 +56,16 @@ public class ClassService {
                         schoolClass.getRoom(),
                         studentRepository.countBySchoolClass_IdAndActiveTrue(
                                 schoolClass.getId()
-                        )
+                        ),
+                        classScheduleRepository
+                                .findBySchoolClass_IdOrderByDayOfWeekAscStartTimeAsc(schoolClass.getId())
+                                .stream()
+                                .map(slot -> new ScheduleSlotResponse(
+                                        slot.getDayOfWeek().name(),
+                                        slot.getStartTime().toString(),
+                                        slot.getEndTime().toString()
+                                ))
+                                .toList()
                 ))
                 .toList();
     }

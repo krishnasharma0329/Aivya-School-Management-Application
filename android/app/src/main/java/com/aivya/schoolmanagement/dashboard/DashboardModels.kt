@@ -6,6 +6,8 @@ import androidx.compose.material.icons.outlined.Class
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 /**
  * Teacher Profile Model (Prepared for future REST API integration)
@@ -39,6 +41,21 @@ enum class ClassAttendanceStatus {
     PENDING,
 }
 
+/** One weekly recurring period for a class, e.g. Monday 09:00-10:00. */
+data class ScheduleSlot(
+    val dayOfWeek: DayOfWeek,
+    val startTime: LocalTime,
+    val endTime: LocalTime,
+)
+
+/** Where a class stands right now relative to its own timetable. */
+enum class ClassTimeStatus {
+    ONGOING,
+    UPCOMING,
+    MISSED,
+    NONE,
+}
+
 /**
  * Assigned Class Card Model
  */
@@ -55,7 +72,31 @@ data class AssignedClass(
     val absentCount: Int = 0,
     val lateCount: Int = 0,
     val unmarkedCount: Int = 0,
-)
+    val schedules: List<ScheduleSlot> = emptyList(),
+) {
+    /**
+     * ONGOING/UPCOMING/MISSED only make sense while attendance hasn't been
+     * taken yet -- once it's MARKED the teacher already acted, so there's
+     * nothing time-based left to flag.
+     */
+    fun computeTimeStatus(
+        today: DayOfWeek = DayOfWeek.from(java.time.LocalDate.now()),
+        now: LocalTime = LocalTime.now(),
+    ): ClassTimeStatus {
+        if (attendanceStatus == ClassAttendanceStatus.MARKED) return ClassTimeStatus.NONE
+
+        val todaysSlots = schedules.filter { it.dayOfWeek == today }
+        if (todaysSlots.isEmpty()) return ClassTimeStatus.NONE
+
+        if (todaysSlots.any { now in it.startTime..it.endTime }) return ClassTimeStatus.ONGOING
+        if (todaysSlots.any { now < it.startTime }) return ClassTimeStatus.UPCOMING
+        return ClassTimeStatus.MISSED
+    }
+
+    /** This class's slot(s) for every day of the week, for the timetable view. */
+    fun weeklyTimetable(): Map<DayOfWeek, List<ScheduleSlot>> =
+        DayOfWeek.entries.associateWith { day -> schedules.filter { it.dayOfWeek == day } }
+}
 
 /**
  * Individual Student Attendance Status for Roll-Call Workflow
@@ -75,7 +116,14 @@ data class StudentAttendanceRecord(
     val rollNumber: Int,
     val studentName: String,
     val status: StudentAttendanceStatus = StudentAttendanceStatus.UNMARKED,
-)
+) {
+    /**
+     * Short, employee-ID-style code derived from the internal database id,
+     * e.g. "STU-223968" -- shown to teachers instead of the raw UUID.
+     */
+    val shortId: String
+        get() = "STU-" + id.replace("-", "").take(6).uppercase()
+}
 
 /**
  * Roll-Call Session Calculation Summary

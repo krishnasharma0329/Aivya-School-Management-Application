@@ -1081,7 +1081,7 @@ private fun StudentAttendanceItemRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "ID: ${student.id}",
+                        text = "ID: ${student.shortId}",
                         color = AivyaSlate,
                         fontSize = 10.5.sp,
                     )

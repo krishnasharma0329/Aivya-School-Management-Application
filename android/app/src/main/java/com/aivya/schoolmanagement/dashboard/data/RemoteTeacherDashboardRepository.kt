@@ -6,6 +6,7 @@ import com.aivya.schoolmanagement.dashboard.AttendanceSessionSummary
 import com.aivya.schoolmanagement.dashboard.AttendanceSummaryState
 import com.aivya.schoolmanagement.dashboard.ClassAttendanceStatus
 import com.aivya.schoolmanagement.dashboard.DashboardUiState
+import com.aivya.schoolmanagement.dashboard.ScheduleSlot
 import com.aivya.schoolmanagement.dashboard.SchoolNotice
 import com.aivya.schoolmanagement.dashboard.StudentAttendanceRecord
 import com.aivya.schoolmanagement.dashboard.StudentAttendanceStatus
@@ -17,8 +18,11 @@ import com.aivya.schoolmanagement.network.AttendanceRecordInput
 import com.aivya.schoolmanagement.network.AttendanceSubmitRequest
 import com.aivya.schoolmanagement.network.NetworkResult
 import com.aivya.schoolmanagement.network.QrCheckInRequest
+import com.aivya.schoolmanagement.network.ScheduleSlotDto
 import com.aivya.schoolmanagement.network.StudentAttendanceDto
 import com.aivya.schoolmanagement.network.safeApiCall
+import java.time.DayOfWeek
+import java.time.LocalTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,6 +83,7 @@ class RemoteTeacherDashboardRepository(
                 absentCount = absent,
                 lateCount = late,
                 unmarkedCount = unmarked,
+                schedules = dto.schedules.mapNotNull { it.toScheduleSlot() },
             )
         }
 
@@ -115,7 +120,7 @@ class RemoteTeacherDashboardRepository(
                 unmarkedCount = totalUnmarked,
                 lastUpdatedTime = "Just now",
             ),
-            notices = emptyList<SchoolNotice>(),
+            notices = demoNotices(),
             history = emptyList(),
         )
 
@@ -176,6 +181,18 @@ class RemoteTeacherDashboardRepository(
     override fun getClassRoster(classId: String): List<StudentRosterItem> =
         rosterCache[classId].orEmpty()
 
+    private fun ScheduleSlotDto.toScheduleSlot(): ScheduleSlot? {
+        return try {
+            ScheduleSlot(
+                dayOfWeek = DayOfWeek.valueOf(dayOfWeek),
+                startTime = LocalTime.parse(startTime),
+                endTime = LocalTime.parse(endTime),
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private fun StudentAttendanceDto.toRecord(): StudentAttendanceRecord {
         val status = when (this.status) {
             "PRESENT" -> StudentAttendanceStatus.PRESENT
@@ -191,6 +208,37 @@ class RemoteTeacherDashboardRepository(
         )
     }
 }
+
+/**
+ * Static demo notices -- there's no notices backend yet, so these are
+ * illustrative only and clearly not real school announcements.
+ */
+private fun demoNotices(): List<SchoolNotice> = listOf(
+    SchoolNotice(
+        id = "NTC-01",
+        title = "Quarterly Parent-Teacher Meeting",
+        category = "Academic",
+        dateText = "This Friday • 10:00 AM",
+        summary = "Slots for parent consultations have been published on the staff portal.",
+        isImportant = true,
+    ),
+    SchoolNotice(
+        id = "NTC-02",
+        title = "Mid-Term Report Cards Due",
+        category = "Deadline",
+        dateText = "Next Monday",
+        summary = "Submit grade sheets for all assigned classes before the deadline.",
+        isImportant = true,
+    ),
+    SchoolNotice(
+        id = "NTC-03",
+        title = "Annual Sports Day",
+        category = "Activity",
+        dateText = "In 2 weeks",
+        summary = "Volunteer sign-up for event duties is open in the staff room.",
+        isImportant = false,
+    ),
+)
 
 private fun emptyDashboardState(): DashboardUiState = DashboardUiState(
     profile = TeacherProfile(

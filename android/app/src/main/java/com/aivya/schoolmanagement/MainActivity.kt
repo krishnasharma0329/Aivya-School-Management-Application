@@ -43,11 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aivya.schoolmanagement.auth.TeacherSession
 import com.aivya.schoolmanagement.auth.TokenStore
+import com.aivya.schoolmanagement.dashboard.OfflineScreen
 import com.aivya.schoolmanagement.dashboard.TeacherDashboardScreen
 import com.aivya.schoolmanagement.dashboard.data.RemoteTeacherDashboardRepository
 import com.aivya.schoolmanagement.network.ApiClient
 import com.aivya.schoolmanagement.network.LoginRequest
 import com.aivya.schoolmanagement.network.NetworkResult
+import com.aivya.schoolmanagement.network.rememberIsOnline
 import com.aivya.schoolmanagement.network.safeApiCall
 import kotlinx.coroutines.launch
 
@@ -75,9 +77,12 @@ fun AivyaApp() {
     val api = remember { ApiClient.create(tokenStore) }
 
     var session by remember { mutableStateOf(tokenStore.load()) }
+    val isOnline by rememberIsOnline()
 
     Surface(modifier = Modifier.fillMaxSize(), color = LightBlue) {
-        if (session == null) {
+        if (!isOnline) {
+            OfflineScreen(onRetry = {})
+        } else if (session == null) {
             LoginScreen(
                 onLogin = { loggedIn -> session = loggedIn },
             )

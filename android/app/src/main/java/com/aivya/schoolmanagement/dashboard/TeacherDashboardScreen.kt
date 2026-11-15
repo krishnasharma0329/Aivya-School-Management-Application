@@ -883,6 +883,36 @@ fun MyClassesHeader(
 }
 
 @Composable
+fun ClassStatusBadge(assignedClass: AssignedClass) {
+    if (assignedClass.attendanceStatus == ClassAttendanceStatus.MARKED) {
+        StatusPill(text = "Marked", background = AivyaGreenSoft, color = AivyaGreenAccent)
+        return
+    }
+
+    when (assignedClass.computeTimeStatus()) {
+        com.aivya.schoolmanagement.dashboard.ClassTimeStatus.ONGOING ->
+            StatusPill(text = "Ongoing", background = AivyaPastelBlue, color = AivyaNavyLight)
+        com.aivya.schoolmanagement.dashboard.ClassTimeStatus.UPCOMING ->
+            StatusPill(text = "Upcoming", background = AivyaPastelBlueLight, color = AivyaSlate)
+        com.aivya.schoolmanagement.dashboard.ClassTimeStatus.MISSED ->
+            StatusPill(text = "Missed", background = AivyaPinkSoft, color = AivyaPinkAccent)
+        com.aivya.schoolmanagement.dashboard.ClassTimeStatus.NONE ->
+            StatusPill(text = "Pending", background = AivyaAmberSoft, color = AivyaAmberAccent)
+    }
+}
+
+@Composable
+private fun StatusPill(text: String, background: Color, color: Color) {
+    Box(
+        modifier = Modifier
+            .background(background, RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(text = text, color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
 fun ClassCardItem(
     assignedClass: AssignedClass,
     onViewClass: () -> Unit,
@@ -936,22 +966,9 @@ fun ClassCardItem(
                             )
                         }
 
-                        // Status badge (Marked / Pending)
+                        // Status badge: Marked, or a time-aware Ongoing/Upcoming/Missed/Pending
                         Spacer(modifier = Modifier.width(6.dp))
-                        if (assignedClass.attendanceStatus == ClassAttendanceStatus.PENDING) {
-                            Box(
-                                modifier = Modifier
-                                    .background(AivyaAmberSoft, RoundedCornerShape(6.dp))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = "Pending",
-                                    color = AivyaAmberAccent,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                            }
-                        }
+                        ClassStatusBadge(assignedClass = assignedClass)
                     }
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -1660,6 +1677,47 @@ private fun ProfileInfoRow(label: String, value: String) {
     }
 }
 
+@Composable
+private fun WeeklyTimetableSection(assignedClass: AssignedClass) {
+    val today = java.time.DayOfWeek.from(java.time.LocalDate.now())
+    val timetable = assignedClass.weeklyTimetable()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AivyaScreenBackground, RoundedCornerShape(12.dp))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        java.time.DayOfWeek.entries.forEach { day ->
+            val slots = timetable[day].orEmpty()
+            val isToday = day == today
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = day.name.lowercase().replaceFirstChar { it.uppercase() },
+                    color = if (isToday) AivyaNavy else AivyaSlate,
+                    fontSize = 12.sp,
+                    fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.SemiBold,
+                )
+                Text(
+                    text = if (slots.isEmpty()) {
+                        "No class"
+                    } else {
+                        slots.joinToString(" • ") { "${it.startTime} - ${it.endTime}" }
+                    },
+                    color = if (slots.isEmpty()) AivyaSlate.copy(alpha = 0.6f) else AivyaTextPrimary,
+                    fontSize = 12.sp,
+                    fontWeight = if (slots.isEmpty()) FontWeight.Normal else FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
 /**
  * ============================================================================
  * INTERACTIVE DIALOG 1: Class Details Dialog
@@ -1763,6 +1821,20 @@ private fun ClassDetailsDialog(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "WEEKLY TIMETABLE",
+                    color = AivyaSlate,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp,
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                WeeklyTimetableSection(assignedClass)
 
                 Spacer(modifier = Modifier.height(16.dp))
 

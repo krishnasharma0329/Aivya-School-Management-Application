@@ -1,5 +1,6 @@
 package com.aivya.backend.dto.classes;
 
+import java.util.List;
 import java.util.UUID;
 
 public record ClassResponse(
@@ -8,6 +9,7 @@ public record ClassResponse(
         String section,
         String subject,
         String room,
-        long studentCount
+        long studentCount,
+        List<ScheduleSlotResponse> schedules
 ) {
 }
