@@ -1677,6 +1677,9 @@ private fun ProfileInfoRow(label: String, value: String) {
     }
 }
 
+private fun java.time.LocalTime.formatHm(): String =
+    "%02d:%02d".format(hour, minute)
+
 @Composable
 private fun WeeklyTimetableSection(assignedClass: AssignedClass) {
     val today = java.time.DayOfWeek.from(java.time.LocalDate.now())
@@ -1707,7 +1710,7 @@ private fun WeeklyTimetableSection(assignedClass: AssignedClass) {
                     text = if (slots.isEmpty()) {
                         "No class"
                     } else {
-                        slots.joinToString(" • ") { "${it.startTime} - ${it.endTime}" }
+                        slots.joinToString(" • ") { "${it.startTime.formatHm()} - ${it.endTime.formatHm()}" }
                     },
                     color = if (slots.isEmpty()) AivyaSlate.copy(alpha = 0.6f) else AivyaTextPrimary,
                     fontSize = 12.sp,

@@ -71,27 +71,24 @@ public class DemoDataSeeder {
                 return;
             }
 
-            DayOfWeek today = DayOfWeek.from(java.time.LocalDate.now());
-            LocalTime now = LocalTime.now();
-
-            // One class is "ongoing" right now, one is "upcoming" later today,
-            // one is "missed" (already over, today, unmarked) -- so the demo
-            // shows all three time-based states without the teacher waiting.
+            // Fixed Monday-Saturday timetable -- schools are closed Sunday, so
+            // no class ever gets a Sunday slot. Real, believable school hours
+            // so Ongoing/Upcoming/Missed reflect whatever time it actually is.
             List<ClassSeed> classSeeds = List.of(
                     new ClassSeed("Grade 10", "Section A", "Advanced Mathematics", "Room 204", 18, List.of(
-                            new ScheduleSeed(today, now.minusMinutes(10), now.plusMinutes(50)),
-                            new ScheduleSeed(nextDay(today, 2), LocalTime.of(9, 0), LocalTime.of(10, 0)),
-                            new ScheduleSeed(nextDay(today, 4), LocalTime.of(9, 0), LocalTime.of(10, 0))
+                            new ScheduleSeed(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(10, 0)),
+                            new ScheduleSeed(DayOfWeek.WEDNESDAY, LocalTime.of(9, 0), LocalTime.of(10, 0)),
+                            new ScheduleSeed(DayOfWeek.FRIDAY, LocalTime.of(9, 0), LocalTime.of(10, 0))
                     )),
                     new ClassSeed("Grade 9", "Section B", "General Science", "Lab 2", 16, List.of(
-                            new ScheduleSeed(today, now.plusHours(2), now.plusHours(3)),
-                            new ScheduleSeed(nextDay(today, 1), LocalTime.of(11, 0), LocalTime.of(12, 0)),
-                            new ScheduleSeed(nextDay(today, 3), LocalTime.of(11, 0), LocalTime.of(12, 0))
+                            new ScheduleSeed(DayOfWeek.TUESDAY, LocalTime.of(11, 0), LocalTime.of(12, 0)),
+                            new ScheduleSeed(DayOfWeek.THURSDAY, LocalTime.of(11, 0), LocalTime.of(12, 0)),
+                            new ScheduleSeed(DayOfWeek.SATURDAY, LocalTime.of(10, 0), LocalTime.of(11, 0))
                     )),
                     new ClassSeed("Grade 8", "Section C", "English", "Room 105", 15, List.of(
-                            new ScheduleSeed(today, now.minusHours(3), now.minusHours(2)),
-                            new ScheduleSeed(nextDay(today, 2), LocalTime.of(13, 30), LocalTime.of(14, 30)),
-                            new ScheduleSeed(nextDay(today, 5), LocalTime.of(13, 30), LocalTime.of(14, 30))
+                            new ScheduleSeed(DayOfWeek.MONDAY, LocalTime.of(13, 30), LocalTime.of(14, 30)),
+                            new ScheduleSeed(DayOfWeek.WEDNESDAY, LocalTime.of(14, 30), LocalTime.of(15, 30)),
+                            new ScheduleSeed(DayOfWeek.THURSDAY, LocalTime.of(13, 30), LocalTime.of(14, 30))
                     ))
             );
 
@@ -129,10 +126,6 @@ public class DemoDataSeeder {
 
             System.out.println("Demo classes, schedules and students seeded successfully.");
         };
-    }
-
-    private DayOfWeek nextDay(DayOfWeek from, int offset) {
-        return DayOfWeek.of(((from.getValue() - 1 + offset) % 7) + 1);
     }
 
     private String rollSuffix(int rollNumber) {

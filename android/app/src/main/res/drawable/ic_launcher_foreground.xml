@@ -4,21 +4,15 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Simple graduation cap glyph, scaled from a 24x24 source and centered
-         in the adaptive icon's safe zone. -->
+    <!-- Classic graduation-cap-with-tassel glyph, scaled from a 640x512
+         source and centered in the adaptive icon's safe zone. -->
     <group
-        android:scaleX="3"
-        android:scaleY="3"
+        android:scaleX="0.1125"
+        android:scaleY="0.1125"
         android:translateX="18"
-        android:translateY="18">
+        android:translateY="25.2">
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M12,3L1,9l11,6l9,-4.91V17h2V9L12,3z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M18.82,9L12,12.72L5.18,9L12,5.28L18.82,9z" />
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M17,15.99l-5,2.73l-5,-2.73v-3.72L12,15l5,-2.73V15.99z" />
+            android:pathData="M622.3,128.9L343.4,20.1c-25.3,-9.2 -21.4,-9.2 -46.7,0L17.8,128.9c-23.9,8.9 -23.9,42.2 0,51.1L96,199.2V320c0,35.3 100.3,64 224,64s224,-28.7 224,-64V199.2l80,-31.1v133.7c-10.8,7.3 -18,19.6 -18,33.1c0,23.2 20.5,42.1 44,42.1s44,-18.9 44,-42.1c0,-13.6 -7.2,-25.8 -18,-33.1V167.8l-22.3,8.2c23.9,-8.9 23.9,-42.2 0,-51.1z" />
     </group>
 </vector>
