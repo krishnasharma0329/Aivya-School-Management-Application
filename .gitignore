@@ -1,0 +1,17 @@
+# Backend (Maven)
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Android (Gradle)
+android/build/
+android/app/build/
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/.idea/
+android/*.iml
+*.iml
+
+# OS / editor
+.DS_Store
+*.swp
