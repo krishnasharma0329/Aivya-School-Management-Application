@@ -46,4 +46,4 @@ than hanging silently.
 
 ## Known limitations
 - H2 is in-memory, so backend data resets on restart (demo data reseeds automatically).
-- Notices/timetable are not backed by the API yet.
+- School notices are static demo content on the client; there's no notices API yet.

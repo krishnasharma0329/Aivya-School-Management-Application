@@ -28,7 +28,7 @@ All endpoints except `/api/v1/health` and `/api/v1/auth/login` require
 `Authorization: Bearer <token>`.
 
 - `POST /api/v1/auth/login` -- `{ email, password }` -> JWT
-- `GET /api/v1/classes` -- the signed-in teacher's classes
+- `GET /api/v1/classes` -- the signed-in teacher's classes, each with its weekly schedule
 - `GET /api/v1/classes/{classId}/roster` -- today's attendance per student
 - `POST /api/v1/classes/{classId}/attendance` -- `{ records: [{studentId, status}] }`
 - `POST /api/v1/classes/{classId}/attendance/qr-checkin` -- `{ qrCode }` marks that student present
@@ -47,4 +47,4 @@ This repo includes a `Dockerfile` and `render.yaml`:
 
 ## Known limitations
 - H2 is in-memory: data resets whenever the service restarts (fine for a demo/assessment).
-- No notices/timetable backend yet -- the app shows an empty state for those.
+- No notices backend yet -- the app shows a small static set on the client.
